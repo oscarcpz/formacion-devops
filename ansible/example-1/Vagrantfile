@@ -1,0 +1,20 @@
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+    config.vm.box = "gyptazy/ubuntu22.04-arm64" 
+
+    config.vm.hostname = "balberith"
+    #config.vm.network "private_network", ip: "10.0.0.10"
+
+    config.vm.provider "vmware_desktop" do |v|
+        v.vmx["ethernet0.pcislotnumber"] = "160"
+        v.memory = 2048
+        v.cpus = 2
+    end
+
+    config.vm.provision "shell", inline: <<-SHELL
+        sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config    
+        systemctl restart sshd.service
+    SHELL
+
+end

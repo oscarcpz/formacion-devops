@@ -1,3 +1,6 @@
 .DS_Store
 *.tfstate
 *.tfstate.backup
+
+.vagrant/
+vagrant_ssh_key*

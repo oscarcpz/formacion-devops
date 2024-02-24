@@ -1,0 +1,48 @@
+# Jupyterhub installation guide
+# What does the installer do? https://tljh.jupyter.org/en/latest/topic/installer-actions.html
+# ansible-playbook -i inventory-vagrant install-jupyterhub.yml --extra-vars '{ "ansible_host": "172.16.170.130" }' --ask-become-pass --tags install
+---
+- name: Install Jupyterhub
+  hosts: all
+  gather_facts: yes
+
+  tasks:
+
+    - name: "Ensure updated and install packages"
+      apt:
+        pkg:
+          - python3
+          - python3-dev
+          - git
+          - curl
+        update_cache: yes
+      become: yes
+      tags:
+        - install
+
+    - name: "Check if installation directory already exists"
+      stat:
+        path: "/opt/tljh"
+      register: dir_jh
+      tags:
+        - install
+
+    - debug:
+        msg: "Jupyterhub already installed"
+      when: dir_jh.stat.exists
+      tags:
+        - install
+
+    - name: "Download jupyterhub and run installation"
+      shell: "curl -L https://tljh.jupyter.org/bootstrap.py | sudo -E python3 - --admin {{ ansible_user }}"
+      become: yes
+      when: not dir_jh.stat.exists
+      tags:
+        - install
+
+    - name: "Get remote ip"
+      debug: 
+        msg: "http://{{ ansible_default_ipv4.address }} user={{ ansible_user }}"
+      tags:
+        - install
+...
