@@ -1,0 +1,59 @@
+# https://www.keycloak.org/getting-started/getting-started-zip#_start_keycloak
+# ansible-playbook -i inventory-vagrant install-keycloak.yml --extra-vars '{ "ansible_host": "172.16.170.130" }' --ask-become-pass --tags install
+---
+- name: Install Jupyterhub
+  hosts: all
+  gather_facts: yes
+
+  vars:
+    keycloak_version: "23.0.7"
+    keycloak_file: "keycloak-{{ keycloak_version }}"
+    keycloak_user: "admin"
+    keycloak_pass: "admin"
+
+  tasks:
+
+    - name: "Ensure updated and install packages"
+      apt:
+        pkg:
+          - openjdk-17-jdk
+          - wget
+          - unzip
+        update_cache: yes
+      become: yes
+      tags:
+        - install
+
+    - name: "Download installer"
+      command: "wget https://github.com/keycloak/keycloak/releases/download/{{ keycloak_version }}/{{ keycloak_file }}.zip"
+      tags:
+        - install
+
+    - name: "Extract zip"
+      command: "unzip {{ keycloak_file }}.zip"
+      tags:
+        - install
+
+    - name: "Remove zip file"
+      file:
+        path: "{{ keycloak_file }}.zip"
+        state: absent
+      tags:
+        - install
+
+    - name: "Start server"
+      shell: "nohup {{ keycloak_file }}/bin/kc.sh start-dev &"
+      environment:
+        KEYCLOAK_ADMIN: admin
+        KEYCLOAK_ADMIN_PASSWORD: admin
+      tags:
+        - install
+        - start
+
+    - name: "Get remote ip"
+      debug: 
+        msg: "http://{{ ansible_default_ipv4.address }}:8080 user={{ keycloak_user }}"
+      tags:
+        - install
+...
+    
