@@ -1,0 +1,48 @@
+VAGRANTFILE_API_VERSION = "2"
+
+# https://mitologia.fandom.com/es/wiki/Clasificaci%C3%B3n_de_demonios#Primera_jerarqu%C3%ADa
+servers = [
+   {
+    :hostname => "balberith",
+    :ip => "10.0.0.10",
+    :ram => 1024,
+    :cpu => 1
+   },
+   {
+    :hostname => "astaroth",
+    :ip => "10.0.0.11",
+    :ram => 1024,
+    :cpu => 1
+   },
+   {
+    :hostname => "sonnillon",
+    :ip => "10.0.0.12",
+    :ram => 1024,
+    :cpu => 1
+   } 
+]
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+    config.vm.box = "gyptazy/ubuntu22.04-arm64" 
+
+    servers.each do |machine|
+
+        config.vm.define machine[:hostname] do |node|
+            node.vm.network :private_network, ip: machine[:ip]
+            node.vm.hostname = machine[:hostname]
+            node.vm.provider "vmware_desktop" do |v|
+                v.allowlist_verified = true
+                v.vmx["ethernet0.pcislotnumber"] = "160"
+                v.memory = machine[:ram]
+                v.cpus = machine[:cpu]
+            end
+    
+            config.vm.provision "shell", inline: <<-SHELL
+                sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config    
+                systemctl restart sshd.service
+            SHELL
+        end
+
+    end
+
+end

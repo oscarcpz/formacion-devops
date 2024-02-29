@@ -1,0 +1,4 @@
+---
+tomcat_manager_pass: "1234maPRE"
+tomcat_admin_pass: "1234adPRE"
+...

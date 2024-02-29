@@ -1,0 +1,258 @@
+# https://www.digitalocean.com/community/tutorials/how-to-install-apache-tomcat-10-on-ubuntu-20-04
+# https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-ubuntu-20-04
+# ansible-playbook -i inventory-pre main.yml --extra-var "@vars/vars-pre.yml" --ask-become-pass
+---
+- name: Install and configure Tomcat
+  hosts: tomcat
+  gather_facts: yes
+
+  vars:
+    tomcat_version: "10.1.19"
+    tomcat_filename: "apache-tomcat-{{ tomcat_version }}"
+    tomcat_url: "https://dlcdn.apache.org/tomcat/tomcat-10/v{{ tomcat_version }}/bin/{{ tomcat_filename }}.zip"
+    tomcat_path: "/opt/tomcat"
+    jdk_path: "/usr/lib/jvm"
+
+  tasks:
+
+    - name:
+      debug:
+        var: ansible_architecture
+      tags: 
+        - info
+
+    - name: "Ensure updated and install packages"
+      apt:
+        pkg:
+          - openjdk-17-jdk
+          - wget
+          - unzip
+        update_cache: yes
+      become: yes
+      tags:
+        - install
+        - tomcat
+
+    - name: "Ensure {{ tomcat_path }} exists"
+      file:
+        path: "{{ tomcat_path }}"
+        state: directory
+      become: yes
+
+    - name: "Check java version"
+      command: "java --version"
+      register: output
+      tags:
+        - install
+        - tomcat
+
+    - debug:
+        var: output.stdout_lines
+      tags:
+        - install
+        - tomcat
+
+    - name: "Check if installation directory already exists"
+      stat:
+        path: "{{ tomcat_path }}/{{ tomcat_filename }}"
+      register: dir_tomcat
+      tags:
+        - install    
+        - tomcat
+
+    - debug:
+        msg: "Tomcat already installed"
+      when: dir_tomcat.stat.exists
+      tags:
+        - install
+        - tomcat
+
+    - debug:
+        var: tomcat_filename
+      when: not dir_tomcat.stat.exists
+      tags:
+        - install
+        - tomcat
+
+    - name: "Download installer"
+      command: "wget {{ tomcat_url }}"
+      args:
+        chdir: "{{ tomcat_path }}"
+      become: yes
+      when: not dir_tomcat.stat.exists
+      tags:
+        - install
+        - tomcat
+
+    - name: "Extract zip"
+      command: "unzip {{ tomcat_filename }}.zip"
+      args:
+        chdir: "{{ tomcat_path }}"
+      become: yes
+      when: not dir_tomcat.stat.exists
+      tags:
+        - install
+        - tomcat
+
+    - name: "Remove zip file"
+      file:
+        path: "{{ tomcat_path }}/{{ tomcat_filename }}.zip"
+        state: absent
+      become: yes
+      tags:
+        - install
+        - tomcat
+
+    - name: "Template a file to {{ tomcat_path }}/{{ tomcat_filename }}/conf/tomcat-users.xml"
+      template:
+        src: templates/tomcat-users.template.xml
+        dest: "{{ tomcat_path }}/{{ tomcat_filename }}/conf/tomcat-users.xml"
+      become: yes
+      tags:
+        - install
+        - tomcat
+
+    - name: Copy context.xml to manager webapp
+      copy:
+        src: templates/context.xml
+        dest: "{{ tomcat_path }}/{{ tomcat_filename }}/webapps/manager/META-INF"
+      become: yes
+      tags:
+        - install
+        - tomcat
+
+    - name: Ensure group "tomcat" exists
+      group:
+        name: tomcat
+        state: present
+      become: yes
+      tags:
+        - install
+        - tomcat
+
+    - name: "Configure tomcat user"
+      user:
+        name: tomcat
+        shell: /bin/false  # aseguramos que no pueda logarse nadie con este usuario
+        create_home: yes
+        home: "{{ tomcat_path }}"
+        groups: tomcat
+        append: yes
+      become: yes
+      tags:
+        - install
+        - tomcat
+
+    - name: "Ensure {{ tomcat_path }} has the correct permissions"
+      file:
+        path: "{{ tomcat_path }}"
+        owner: tomcat
+        group: tomcat
+        mode: u+rxw,g-rw,o-rw
+        recurse: yes
+        state: directory
+      become: yes
+      tags:
+        - install
+        - tomcat
+
+    - name: "Get JDK installation dir"
+      shell: "ls | head -1"
+      args:
+        chdir: "{{ jdk_path }}"
+      register: jdk_name
+      tags:
+        - install
+        - tomcat
+
+    - name: "Store java path for next steps"
+      set_fact:
+        java_path: "{{ jdk_path }}/{{ jdk_name.stdout }}"
+      tags:
+        - install
+        - tomcat
+
+    - debug:
+        msg: "Java path for JAVA_HOME: {{ java_path }}"
+      tags:
+        - install
+        - tomcat
+
+    - name: "Template a file to /etc/systemd/system/tomcat.service"
+      template:
+        src: templates/tomcat.service
+        dest: "/etc/systemd/system/tomcat.service"
+      become: yes
+      tags:
+        - install
+        - tomcat
+
+    - name: "Daemon reload"
+      command: "systemctl daemon-reload"
+      become: yes
+      tags:
+        - install
+        - tomcat
+
+    - name: "Start tomcat"
+      command: "systemctl start tomcat"
+      become: yes
+      tags:
+        - install
+        - tomcat
+
+    - name: "Status tomcat"
+      command: "systemctl status tomcat"
+      become: yes
+      register: status_tomcat
+      tags:
+        - install
+        - tomcat
+
+    - debug:
+        var: status_tomcat
+      tags:
+        - install
+        - tomcat
+
+- name: Install and configure Postgre
+  hosts: postgre
+  gather_facts: yes
+
+  vars:
+
+  tasks:
+
+    - name:
+      debug:
+        var: ansible_architecture
+      tags: 
+        - info
+        - postgre
+
+    - name: "Ensure updated and install packages"
+      apt:
+        pkg:
+          - postgresql 
+          - postgresql-contrib
+        update_cache: yes
+      become: yes
+      tags:
+        - install
+        - postgre
+
+    - name: "Start postgre"
+      command: "systemctl start postgresql.service"
+      become: yes
+      register: status_postgre
+      tags:
+        - install
+        - postgre
+
+    - debug:
+        var: status_postgre
+      tags:
+        - install
+        - postgre
+
+...
