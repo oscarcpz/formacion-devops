@@ -19,7 +19,7 @@ resource "docker_image" "portainer" {
 resource "docker_image" "debian" {
   name      = "custom_debian"
   build     {
-    path = "${path.cwd}/../docker_example"
+    path = "${path.cwd}/docker_example"
     tag     = ["custom_debian"]
   }
 }
