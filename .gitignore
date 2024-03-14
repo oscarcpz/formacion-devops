@@ -4,3 +4,8 @@
 
 .vagrant/
 vagrant_ssh_key*
+
+azure_modulo_linux*
+
+.terraform/
+.terraform.lock.hcl
