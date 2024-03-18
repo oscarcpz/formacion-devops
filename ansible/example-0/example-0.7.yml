@@ -1,0 +1,24 @@
+---
+- name: Using first module - file
+  hosts: all
+  gather_facts: yes
+
+  vars:
+    my_directory: /tmp/new_dir
+
+  tasks:
+
+    - name: Check if directory exists
+      stat:
+        path: "{{ my_directory }}"
+      register: my_dir
+
+    - name: Creating a file with content
+      copy:
+        dest: "{{ my_directory }}/file_with_content.txt"
+        content: |
+          line 01
+          line 02
+          line 03
+      when: my_dir.stat.exists
+...

@@ -1,0 +1,10 @@
+---
+- name: Using facts
+  hosts: all
+  gather_facts: yes
+
+  tasks:
+
+    - debug:
+        var: ansible_facts
+...

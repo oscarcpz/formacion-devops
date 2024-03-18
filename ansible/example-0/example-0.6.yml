@@ -1,0 +1,29 @@
+---
+- name: Using first module - file
+  hosts: all
+  gather_facts: yes
+
+  vars:
+    my_directory: /tmp/new_dir
+
+  tasks:
+
+    - name: Check if directory exists
+      stat:
+        path: "{{ my_directory }}"
+      register: my_dir
+
+    - debug:
+        var: my_dir
+
+    - name: "Touch file inside if directory {{ my_directory }} exists"
+      file:
+        path: "{{ my_directory }}/my_file{{ item.file_number }}.{{ item.file_extension }}"
+        state: touch
+        mode: u+rw,g-wx,o-rwx
+      loop:
+        - { file_number: 1, file_extension: csv }
+        - { file_number: 2, file_extension: txt }
+        - { file_number: 3, file_extension: xlsx }
+      when: my_dir.stat.exists
+...

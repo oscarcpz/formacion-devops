@@ -1,0 +1,24 @@
+---
+- name: Using first module - file
+  hosts: all
+  gather_facts: no
+
+  vars_files:
+    - vars-file-1.yml
+
+  tasks:
+
+    - name: Check if directory exists
+      stat:
+        path: "{{ my_directory }}"
+      register: my_dir
+
+    - name: Creating a file with content
+      copy:
+        dest: "{{ my_directory }}/file_with_content_v2.txt"
+        content: |
+          username: {{ username }}
+          ansible_username: {{ ansible_user}}
+          line 03
+      when: my_dir.stat.exists
+...

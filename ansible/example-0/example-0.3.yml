@@ -1,0 +1,15 @@
+---
+- name: Using first module - file
+  hosts: all
+  gather_facts: yes
+
+  tasks:
+
+    - name: Create a directory if it does not exist
+      file:
+        path: /tmp/new_dir
+        state: directory
+        mode: '0755'
+
+
+...

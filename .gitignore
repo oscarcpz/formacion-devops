@@ -9,3 +9,5 @@ azure_modulo_linux*
 
 .terraform/
 .terraform.lock.hcl
+
+new_dir/

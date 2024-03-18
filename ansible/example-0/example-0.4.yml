@@ -1,0 +1,15 @@
+---
+- name: Using first module - file
+  hosts: all
+  gather_facts: yes
+
+  tasks:
+
+    - name: Remove directory if it exists
+      file:
+        path: /tmp/new_dir
+        state: absent
+        mode: '0755'
+
+
+...

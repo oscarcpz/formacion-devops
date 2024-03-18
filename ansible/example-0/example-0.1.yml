@@ -1,0 +1,15 @@
+---
+- name: Using facts
+  hosts: all
+  gather_facts: yes
+
+  tasks:
+
+    - name: Collect OS info
+      debug:
+        var: ansible_os_family
+
+    - debug:
+        msg: "Current date in {{ ansible_host }}: {{ ansible_date_time.date }}"
+
+...
