@@ -20,6 +20,7 @@
         var: ansible_architecture
       tags: 
         - info
+        - paso1
 
     - name: "Ensure updated and install packages"
       apt:
@@ -32,12 +33,16 @@
       tags:
         - install
         - tomcat
+        - paso1
 
     - name: "Ensure {{ tomcat_path }} exists"
       file:
         path: "{{ tomcat_path }}"
         state: directory
       become: yes
+      tags:
+        - install
+        - tomcat
 
     - name: "Check java version"
       command: "java --version"
@@ -45,12 +50,14 @@
       tags:
         - install
         - tomcat
+        - paso1
 
     - debug:
-        var: output.stdout_lines
+        var: output
       tags:
         - install
         - tomcat
+        - paso1
 
     - name: "Check if installation directory already exists"
       stat:
@@ -59,6 +66,7 @@
       tags:
         - install    
         - tomcat
+        - paso1
 
     - debug:
         msg: "Tomcat already installed"
@@ -66,6 +74,7 @@
       tags:
         - install
         - tomcat
+        - paso1
 
     - debug:
         var: tomcat_filename
@@ -73,6 +82,7 @@
       tags:
         - install
         - tomcat
+        - paso1
 
     - name: "Download installer"
       command: "wget {{ tomcat_url }}"
@@ -99,6 +109,7 @@
         path: "{{ tomcat_path }}/{{ tomcat_filename }}.zip"
         state: absent
       become: yes
+      when: not dir_tomcat.stat.exists
       tags:
         - install
         - tomcat
