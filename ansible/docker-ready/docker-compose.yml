@@ -1,0 +1,40 @@
+services:
+
+  ansible:
+    build:
+      context: ./ansible-img
+      dockerfile: Dockerfile
+    image: ansible-img:latest
+    container_name: ansible
+    networks:
+      - ssh-net
+    ports:
+      - "2221:22"
+    volumes:
+      - ${WORKSPACE}:/home/ansible/workspace
+
+  host1:
+    build:
+      context: ./ssh-container-img
+      dockerfile: Dockerfile
+    image: ssh-container-img:latest
+    container_name: host1
+    networks:
+      - ssh-net
+    ports:
+      - "2222:22"  # opcional, para acceder desde el host si lo necesitas
+
+  host2:
+    build:
+      context: ./ssh-container-img
+      dockerfile: Dockerfile
+    image: ssh-container-img:latest
+    container_name: host2
+    networks:
+      - ssh-net
+    ports:
+      - "2223:22"  # opcional, para acceder desde el host si lo necesitas
+
+networks:
+  ssh-net:
+    driver: bridge
