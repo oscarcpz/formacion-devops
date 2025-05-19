@@ -1,0 +1,26 @@
+---
+# Playbook para instalar un nodeJS y un nginx en la misma maquina
+# En este ejemplo se están usando los módulos de Ansible para instalar nodejs y nginx en una máquina
+
+- name: Instalar nodejs y nginx
+  hosts: all
+  become: true
+  tasks:
+    - name: Instalar nodejs
+      apt:
+        name: nodejs
+        state: present
+
+    - name: Instalar nginx
+      apt:
+        name: nginx
+        state: present
+
+    - name: Iniciar nginx
+      service:
+        name: nginx
+        state: started
+
+    - name: Iniciar nodejs
+      command: node /path/to/your/app.js & # Asegúrate de que el script de nodejs esté en la ruta correcta.
+...

@@ -1,0 +1,116 @@
+# Ansible Playbook para instalar Nginx
+# https://www.digitalocean.com/community/tutorials/how-to-install-nginx-on-ubuntu-20-04
+# https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-ubuntu-20-04
+---
+- name: Install Nginx
+  hosts: nginx
+  gather_facts: yes
+
+  tasks:
+
+    - name: Check if SO is Ubuntu
+      debug:
+        msg: "The operating system is Ubuntu"
+      when: ansible_distribution == "Ubuntu"
+
+    - name: ansible_distribution != "Ubuntu"
+      fail: 
+        msg: "The operating system is not Ubuntu"
+      when: ansible_distribution != "Ubuntu"
+
+    - name: Check if ansible is inside a container
+      stat:
+        path: "{{ item }}"
+      register: docker_files
+      with_items:
+        - "/.dockerenv"
+        - "/run/.containerenv"
+
+    - name: Fix fact ansible inside a container
+      set_fact:
+        is_docker_container: "{{ docker_files.results | map(attribute='stat.exists') | select('true') | list | length > 0 }}"
+
+    - debug:
+        msg: "Ansible is running inside a container"
+      when: is_docker_container
+
+    - name: Install nginx
+      apt:
+        pkg:
+          - nginx
+          - ufw
+        state: present
+        update_cache: yes
+      become: yes
+
+    # No sirve si se lanza contra un contenedor
+    - name: Adjusting the firewall
+      ufw:
+        rule: allow
+        name: 'Nginx Full'
+        state: enabled
+      become: yes
+      become_method: sudo
+      when: not is_docker_container
+
+    - name: Starting nginx
+      service:
+        name: nginx
+        state: started 
+        enabled: yes
+      become: yes
+
+    # No sirve si se lanza contra un contenedor
+    - name: Check nginx status
+      command: systemctl status nginx
+      register: nginx_status
+      become: yes
+      when: not is_docker_container
+
+    - debug:
+        var: nginx_status
+
+    - name: Setting up a simple HTML page
+      copy:
+        content: "<h1>Hello, Nginx!</h1>"
+        dest: /var/www/html/index.html
+      become: yes
+
+    - name: Setting up Nginx as a reverse proxy for a Node.js application
+      template:
+        src: templates/nginx-nodejs.conf
+        dest: /etc/nginx/sites-available/nodejs
+      become: yes
+
+    - name: Enable the new Nginx configuration
+      command: nginx -s reload
+      become: yes
+
+
+- name: Install Nodejs
+  hosts: nodejs
+  gather_facts: yes
+
+  tasks:
+
+    - name: Check if SO is Ubuntu
+      debug:
+        msg: "The operating system is Ubuntu"
+      when: ansible_distribution == "Ubuntu"
+
+    - name: ansible_distribution != "Ubuntu"
+      fail: 
+        msg: "The operating system is not Ubuntu"
+      when: ansible_distribution != "Ubuntu"
+
+    - name: Install nodejs
+      apt:
+        pkg:
+          - nodejs
+          - npm
+          - build-essential
+        state: present
+        update_cache: yes
+      become: yes
+
+...
